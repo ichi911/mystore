@@ -87,10 +87,11 @@
         </div>
     </div>
 
-    <!-- Vendor Dashboard Modal (Add Product) -->
+    <!-- Vendor Dashboard Modal (Add / Edit Product) -->
     <div id="dashboard-modal" class="cart-modal">
         <div class="cart-content" style="max-width: 500px;">
-            <h2>Add New Product</h2>
+            <h2 id="modal-heading">Add New Product</h2>
+            <input type="hidden" id="edit-prod-id">
             <div class="form-group">
                 <label>Product Name</label>
                 <input type="text" id="prod-name" placeholder="e.g. Wireless Headphones">
@@ -128,19 +129,19 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Upload Product Photo</label>
+                <label>Upload Product Photo <span id="current-img-note" style="font-size:0.8rem; color:#6b7280;">(Leave empty to keep current image when editing)</span></label>
                 <input type="file" id="prod-image" accept="image/*">
             </div>
-            <button class="checkout-btn" onclick="addProduct()">Publish Live Product</button>
+            <button class="checkout-btn" id="save-product-btn" onclick="saveProduct()">Publish Live Product</button>
             <button class="close-btn" style="margin-top: 15px;" onclick="closeDashboard()">Close</button>
         </div>
     </div>
 
     <!-- My Uploads Management Modal -->
     <div id="my-uploads-modal" class="cart-modal">
-        <div class="cart-content" style="max-width: 600px;">
+        <div class="cart-content" style="max-width: 650px;">
             <h2>Manage Your Uploaded Items</h2>
-            <div id="my-uploads-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+            <div id="my-uploads-list" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px;">
                 <p>Loading your items...</p>
             </div>
             <button class="close-btn" onclick="closeMyUploads()">Close</button>
@@ -173,11 +174,11 @@
         </div>
     </footer>
 
-    <!-- Firebase Script importing from local firebase-config.js -->
+    <!-- Firebase Script -->
     <script type="module">
         import { auth, db } from "./firebase-config.js";
         import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         let cart = [];
         let isRegisterMode = false;
@@ -236,8 +237,30 @@
             alert('Logged out.');
         }
 
-        window.openDashboard = function() { document.getElementById('dashboard-modal').style.display = 'flex'; }
+        window.openDashboard = function() {
+            document.getElementById('modal-heading').innerText = 'Add New Product';
+            document.getElementById('save-product-btn').innerText = 'Publish Live Product';
+            document.getElementById('edit-prod-id').value = '';
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-price').value = '';
+            document.getElementById('prod-category').value = 'Fashion & Clothing';
+            document.getElementById('prod-image').value = '';
+            document.getElementById('dashboard-modal').style.display = 'flex';
+        }
+
         window.closeDashboard = function() { document.getElementById('dashboard-modal').style.display = 'none'; }
+
+        window.openEditProduct = function(id, name, price, category) {
+            closeMyUploads();
+            document.getElementById('modal-heading').innerText = 'Edit Product';
+            document.getElementById('save-product-btn').innerText = 'Save Changes';
+            document.getElementById('edit-prod-id').value = id;
+            document.getElementById('prod-name').value = name;
+            document.getElementById('prod-price').value = price;
+            document.getElementById('prod-category').value = category;
+            document.getElementById('prod-image').value = '';
+            document.getElementById('dashboard-modal').style.display = 'flex';
+        }
 
         window.openMyUploads = async function() {
             document.getElementById('my-uploads-modal').style.display = 'flex';
@@ -260,17 +283,23 @@
 
                 listDiv.innerHTML = '';
                 userProducts.forEach(p => {
-                    let thumb = p.imageUrl ? `<img src="${p.imageUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; margin-right:10px;">` : '';
+                    let thumb = p.imageUrl ? `<img src="${p.imageUrl}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; margin-right:10px;">` : '';
+                    let safeName = p.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    let safeCat = (p.category || 'Fashion & Clothing').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
                     listDiv.innerHTML += `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-                            <div style="display: flex; align-items: center;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+                            <div style="display: flex; align-items: center; max-width: 65%;">
                                 ${thumb}
-                                <div>
-                                    <strong>${p.name}</strong><br>
+                                <div style="overflow: hidden;">
+                                    <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${p.name}</strong>
                                     <small style="color: #6b7280;">₱${p.price.toLocaleString()} | ${p.category || 'General'}</small>
                                 </div>
                             </div>
-                            <button onclick="deleteProduct('${p.id}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">Delete</button>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="openEditProduct('${p.id}', '${safeName}', ${p.price}, '${safeCat}')" style="background:#6366f1; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">Edit</button>
+                                <button onclick="deleteProduct('${p.id}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">Delete</button>
+                            </div>
                         </div>
                     `;
                 });
@@ -288,7 +317,8 @@
             reader.onerror = error => reject(error);
         });
 
-        window.addProduct = async function() {
+        window.saveProduct = async function() {
+            let editId = document.getElementById('edit-prod-id').value;
             let name = document.getElementById('prod-name').value;
             let price = parseFloat(document.getElementById('prod-price').value);
             let category = document.getElementById('prod-category').value;
@@ -299,28 +329,35 @@
                 return;
             }
 
-            let imageUrl = '';
-            if (imageFile) {
-                imageUrl = await toBase64(imageFile);
-            }
-
             try {
-                await addDoc(collection(db, "products"), {
-                    name,
-                    price,
-                    category,
-                    imageUrl,
-                    vendor: window.currentUser.email,
-                    createdAt: Date.now()
-                });
-                alert('Product published live with image!');
-                document.getElementById('prod-name').value = '';
-                document.getElementById('prod-price').value = '';
-                document.getElementById('prod-image').value = '';
+                if (editId) {
+                    // Updating an existing product
+                    let updateData = { name, price, category };
+                    if (imageFile) {
+                        updateData.imageUrl = await toBase64(imageFile);
+                    }
+                    await updateDoc(doc(db, "products", editId), updateData);
+                    alert('Product updated successfully!');
+                } else {
+                    // Creating a new product
+                    let imageUrl = '';
+                    if (imageFile) {
+                        imageUrl = await toBase64(imageFile);
+                    }
+                    await addDoc(collection(db, "products"), {
+                        name,
+                        price,
+                        category,
+                        imageUrl,
+                        vendor: window.currentUser.email,
+                        createdAt: Date.now()
+                    });
+                    alert('Product published live with image!');
+                }
                 closeDashboard();
                 loadMarketplaceProducts();
             } catch (error) {
-                alert('Error publishing product: ' + error.message);
+                alert('Error saving product: ' + error.message);
             }
         }
 
@@ -363,6 +400,7 @@
                     ? `<img src="${p.imageUrl}" alt="${p.name}">`
                     : `<div class="product-img watch-bg"></div>`;
 
+                // Secure data attributes to avoid breaking with special characters or quotes in product names
                 grid.innerHTML += `
                     <div class="card">
                         ${imgMarkup}
@@ -370,10 +408,18 @@
                         <p class="price">₱${p.price.toLocaleString()}</p>
                         <p style="font-size: 0.75rem; color: #6366f1; font-weight: 600; margin-bottom: 2px;">${p.category || 'General'}</p>
                         <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 10px;">By: ${p.vendor || 'Unknown'}</p>
-                        <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+                        <button class="add-btn" data-name="${p.name.replace(/"/g, '&quot;')}" data-price="${p.price}" onclick="addToCartFromElement(this)">Add to Cart</button>
                     </div>
                 `;
             });
+        }
+
+        window.addToCartFromElement = function(btn) {
+            let name = btn.getAttribute('data-name');
+            let price = parseFloat(btn.getAttribute('data-price'));
+            cart.push({ name, price });
+            updateCartUI();
+            alert(name + " added to cart!");
         }
 
         window.filterByCategory = function() {
@@ -384,12 +430,6 @@
                 let filtered = allProducts.filter(p => p.category === selectedCategory);
                 renderProducts(filtered);
             }
-        }
-
-        window.addToCart = function(name, price) {
-            cart.push({ name, price });
-            updateCartUI();
-            alert(name + " added to cart!");
         }
 
         window.updateCartUI = function() {
