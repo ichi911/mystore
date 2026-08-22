@@ -114,14 +114,16 @@
         import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // IMPORTANT: Replace these values with your actual Firebase project settings from the Firebase Console
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAACHVvxBnKriHjYj4AYy_Ac9LXr_pRjJM",
+  authDomain: "mystore-marketplace-28fbe.firebaseapp.com",
+  projectId: "mystore-marketplace-28fbe",
+  storageBucket: "mystore-marketplace-28fbe.firebasestorage.app",
+  messagingSenderId: "850784198226",
+  appId: "1:850784198226:web:bd54f9cf89eccf2083898b",
+  measurementId: "G-Y5FTLCK2Q9"
+};
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
