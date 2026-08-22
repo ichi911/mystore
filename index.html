@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyStore - Multi-Vendor Marketplace</title>
+    <title>MyStore - Live Firebase Marketplace</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -23,15 +23,15 @@
     </nav>
 
     <header class="hero" id="home">
-        <h1>Multi-Vendor Marketplace</h1>
-        <p>Discover unique products crafted by independent creators worldwide.</p>
+        <h1>Live Cloud Marketplace</h1>
+        <p>Real-time multi-vendor store powered by Firebase.</p>
         <div style="margin-top: 20px;">
-            <button class="add-btn" style="width: auto; padding: 12px 25px;" onclick="scrollToShop()">Browse Marketplace</button>
+            <button class="add-btn" style="width: auto; padding: 12px 25px;" onclick="scrollToShop()">Browse Products</button>
         </div>
     </header>
 
     <main class="product-grid" id="shop">
-        <!-- Products injected dynamically via JavaScript -->
+        <!-- Live products injected here -->
     </main>
 
     <!-- Auth Modal -->
@@ -58,14 +58,14 @@
     <!-- Vendor Dashboard Modal -->
     <div id="dashboard-modal" class="cart-modal">
         <div class="cart-content" style="max-width: 500px;">
-            <h2>Vendor Dashboard - Add Product</h2>
+            <h2>Vendor Dashboard - Add Live Product</h2>
             <div class="form-group">
                 <label>Product Name</label>
-                <input type="text" id="prod-name" placeholder="e.g. Handmade Leather Wallet">
+                <input type="text" id="prod-name" placeholder="e.g. Artisanal Coffee Beans">
             </div>
             <div class="form-group">
                 <label>Price (₱)</label>
-                <input type="number" id="prod-price" placeholder="1500">
+                <input type="number" id="prod-price" placeholder="450">
             </div>
             <div class="form-group">
                 <label>Category Style Gradient</label>
@@ -76,9 +76,7 @@
                     <option value="mug-bg">Green Gradient</option>
                 </select>
             </div>
-            <button class="checkout-btn" onclick="addProduct()">Publish Product</button>
-            <h3 style="margin-top: 20px; font-size: 1.1rem;">Your Listed Products</h3>
-            <ul id="vendor-product-list" style="list-style: none; max-height: 120px; overflow-y: auto; margin-top: 10px; padding-left: 0;"></ul>
+            <button class="checkout-btn" onclick="addProduct()">Publish Live Product</button>
             <button class="close-btn" style="margin-top: 15px;" onclick="closeDashboard()">Close Dashboard</button>
         </div>
     </div>
@@ -99,46 +97,50 @@
     <section class="trust-bar">
         <div>🚚 Free Nationwide Delivery</div>
         <div>🔒 Secure Online Payments</div>
-        <div>⭐ Independent Creator Verification</div>
+        <div>⭐ Live Cloud Sync</div>
     </section>
 
     <footer>
         <p>&copy; 2026 MyStore Marketplace. All rights reserved.</p>
         <div class="footer-links">
-            <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Vendor Agreement</a>
+            <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
         </div>
     </footer>
 
-    <script>
-        // Initialize default sample products if none exist in localStorage
-        if (!localStorage.getItem('mystore_products')) {
-            const defaultProducts = [
-                { id: 1, name: 'Elegance Chrono Watch', price: 5499, bg: 'watch-bg', vendor: 'Admin' },
-                { id: 2, name: 'Sonic Flow Headphones', price: 3150, bg: 'headphone-bg', vendor: 'Admin' },
-                { id: 3, name: 'Urban Voyager Backpack', price: 2200, bg: 'bag-bg', vendor: 'Admin' },
-                { id: 4, name: 'Minimalist Ceramic Mug', price: 799, bg: 'mug-bg', vendor: 'Admin' }
-            ];
-            localStorage.setItem('mystore_products', JSON.stringify(defaultProducts));
-        }
+    <!-- Firebase Integration Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        if (!localStorage.getItem('mystore_users')) {
-            localStorage.setItem('mystore_users', JSON.stringify([]));
-        }
-
-        let currentUser = JSON.parse(localStorage.getItem('mystore_current_user')) || null;
-        let cart = [];
-        let isRegisterMode = false;
-
-        window.onload = function() {
-            updateNavbar();
-            renderProducts();
+        // IMPORTANT: Replace these values with your actual Firebase project settings from the Firebase Console
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        function updateNavbar() {
-            if (currentUser) {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let cart = [];
+        let isRegisterMode = false;
+        window.currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            updateNavbar();
+        });
+
+        window.updateNavbar = function() {
+            if (window.currentUser) {
                 document.getElementById('auth-nav-link').style.display = 'none';
                 document.getElementById('dashboard-link').style.display = 'inline-block';
-                document.getElementById('user-welcome').innerText = 'Hi, ' + currentUser.email.split('@')[0];
+                document.getElementById('user-welcome').innerText = 'Hi, ' + window.currentUser.email.split('@')[0];
                 document.getElementById('logout-btn').style.display = 'inline-block';
             } else {
                 document.getElementById('auth-nav-link').style.display = 'inline-block';
@@ -148,143 +150,102 @@
             }
         }
 
-        function openAuthModal() {
-            document.getElementById('auth-modal').style.display = 'flex';
-        }
-        function closeAuthModal() {
-            document.getElementById('auth-modal').style.display = 'none';
-        }
+        window.openAuthModal = function() { document.getElementById('auth-modal').style.display = 'flex'; }
+        window.closeAuthModal = function() { document.getElementById('auth-modal').style.display = 'none'; }
 
-        function toggleAuthMode() {
+        window.toggleAuthMode = function() {
             isRegisterMode = !isRegisterMode;
             document.getElementById('auth-title').innerText = isRegisterMode ? 'Create Vendor Account' : 'Sign In to MyStore';
             document.getElementById('auth-switch-text').innerText = isRegisterMode ? 'Already have an account?' : "Don't have an account?";
         }
 
-        function handleAuth() {
+        window.handleAuth = async function() {
             let email = document.getElementById('auth-email').value;
             let pass = document.getElementById('auth-password').value;
-            if(!email || !pass) {
-                alert('Please fill in all fields.');
-                return;
-            }
-
-            let users = JSON.parse(localStorage.getItem('mystore_users'));
-
-            if(isRegisterMode) {
-                let existing = users.find(u => u.email === email);
-                if(existing) {
-                    alert('Email already registered!');
-                    return;
+            try {
+                if (isRegisterMode) {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                    alert('Account registered successfully!');
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    alert('Logged in successfully!');
                 }
-                users.push({ email, pass });
-                localStorage.setItem('mystore_users', JSON.stringify(users));
-                alert('Account created successfully! You can now sign in.');
-                toggleAuthMode();
-            } else {
-                let user = users.find(u => u.email === email && u.pass === pass);
-                if(!user && email !== 'admin@store.com') {
-                    alert('Invalid email or password!');
-                    return;
-                }
-                currentUser = { email };
-                localStorage.setItem('mystore_current_user', JSON.stringify(currentUser));
                 closeAuthModal();
-                updateNavbar();
-                alert('Welcome back, ' + email + '!');
+            } catch (error) {
+                alert('Error: ' + error.message);
             }
         }
 
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('mystore_current_user');
-            updateNavbar();
-            alert('Logged out successfully.');
-            renderProducts();
+        window.logout = async function() {
+            await signOut(auth);
+            alert('Logged out.');
         }
 
-        function openDashboard() {
-            document.getElementById('dashboard-modal').style.display = 'flex';
-            renderVendorProducts();
-        }
-        function closeDashboard() {
-            document.getElementById('dashboard-modal').style.display = 'none';
-        }
+        window.openDashboard = function() { document.getElementById('dashboard-modal').style.display = 'flex'; }
+        window.closeDashboard = function() { document.getElementById('dashboard-modal').style.display = 'none'; }
 
-        function addProduct() {
+        window.addProduct = async function() {
             let name = document.getElementById('prod-name').value;
             let price = parseFloat(document.getElementById('prod-price').value);
             let bg = document.getElementById('prod-bg').value;
 
-            if(!name || isNaN(price)) {
-                alert('Please provide valid product details.');
+            if (!name || isNaN(price)) {
+                alert('Please enter valid product info.');
                 return;
             }
 
-            let products = JSON.parse(localStorage.getItem('mystore_products'));
-            let newProd = {
-                id: Date.now(),
-                name,
-                price,
-                bg,
-                vendor: currentUser.email
-            };
-
-            products.push(newProd);
-            localStorage.setItem('mystore_products', JSON.stringify(products));
-
-            document.getElementById('prod-name').value = '';
-            document.getElementById('prod-price').value = '';
-            
-            renderProducts();
-            renderVendorProducts();
-            alert('Product published successfully to the marketplace!');
-        }
-
-        function renderVendorProducts() {
-            let products = JSON.parse(localStorage.getItem('mystore_products'));
-            let list = document.getElementById('vendor-product-list');
-            let myProducts = products.filter(p => p.vendor === currentUser.email);
-
-            if(myProducts.length === 0) {
-                list.innerHTML = '<li style="color: #6b7280; font-size: 0.9rem;">No products uploaded yet.</li>';
-                return;
+            try {
+                await addDoc(collection(db, "products"), {
+                    name,
+                    price,
+                    bg,
+                    vendor: window.currentUser.email,
+                    createdAt: Date.now()
+                });
+                alert('Product published live to the database!');
+                document.getElementById('prod-name').value = '';
+                document.getElementById('prod-price').value = '';
+                closeDashboard();
+                loadMarketplaceProducts();
+            } catch (error) {
+                alert('Error publishing product: ' + error.message);
             }
-
-            list.innerHTML = '';
-            myProducts.forEach(p => {
-                list.innerHTML += `<li style="padding: 6px 0; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between;">
-                    <span>${p.name}</span>
-                    <strong style="color: #6366f1;">₱${p.price.toLocaleString()}</strong>
-                </li>`;
-            });
         }
 
-        function renderProducts() {
-            let products = JSON.parse(localStorage.getItem('mystore_products'));
+        async function loadMarketplaceProducts() {
             let grid = document.getElementById('shop');
-            grid.innerHTML = '';
-
-            products.forEach(p => {
-                grid.innerHTML += `
-                    <div class="card">
-                        <div class="product-img ${p.bg}"></div>
-                        <h3>${p.name}</h3>
-                        <p class="price">₱${p.price.toLocaleString()}</p>
-                        <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 10px;">By: ${p.vendor}</p>
-                        <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
-                    </div>
-                `;
-            });
+            grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">Loading live products...</p>';
+            try {
+                const querySnapshot = await getDocs(collection(db, "products"));
+                grid.innerHTML = '';
+                if (querySnapshot.empty) {
+                    grid.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:#6b7280;">No products found in database yet. Sign in and add one!</p>';
+                    return;
+                }
+                querySnapshot.forEach((doc) => {
+                    let p = doc.data();
+                    grid.innerHTML += `
+                        <div class="card">
+                            <div class="product-img ${p.bg}"></div>
+                            <h3>${p.name}</h3>
+                            <p class="price">₱${p.price.toLocaleString()}</p>
+                            <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 10px;">By: ${p.vendor}</p>
+                            <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                grid.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:#ef4444;">Error loading live products from Firebase.</p>';
+            }
         }
 
-        function addToCart(name, price) {
+        window.addToCart = function(name, price) {
             cart.push({ name, price });
             updateCartUI();
-            alert(name + " has been added to your cart!");
+            alert(name + " added to cart!");
         }
 
-        function updateCartUI() {
+        window.updateCartUI = function() {
             document.getElementById('cart-count').innerText = cart.length;
             let list = document.getElementById('cart-items');
             let totalElem = document.getElementById('cart-total-price');
@@ -302,14 +263,16 @@
             totalElem.innerText = total.toLocaleString();
         }
 
-        function toggleCart() {
+        window.toggleCart = function() {
             let modal = document.getElementById('cart-modal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
         }
 
-        function scrollToShop() {
+        window.scrollToShop = function() {
             document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
         }
+
+        loadMarketplaceProducts();
     </script>
 </body>
 </html>
