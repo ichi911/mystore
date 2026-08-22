@@ -128,13 +128,8 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Category Style Gradient</label>
-                <select id="prod-bg">
-                    <option value="watch-bg">Blue Gradient</option>
-                    <option value="headphone-bg">Purple Gradient</option>
-                    <option value="bag-bg">Yellow Gradient</option>
-                    <option value="mug-bg">Green Gradient</option>
-                </select>
+                <label>Upload Product Photo</label>
+                <input type="file" id="prod-image" accept="image/*">
             </div>
             <button class="checkout-btn" onclick="addProduct()">Publish Live Product</button>
             <button class="close-btn" style="margin-top: 15px;" onclick="closeDashboard()">Close</button>
@@ -279,11 +274,15 @@
 
                 listDiv.innerHTML = '';
                 userProducts.forEach(p => {
+                    let thumb = p.imageUrl ? `<img src="${p.imageUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; margin-right:10px;">` : '';
                     listDiv.innerHTML += `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-                            <div>
-                                <strong>${p.name}</strong><br>
-                                <small style="color: #6b7280;">₱${p.price.toLocaleString()} | ${p.category || 'General'}</small>
+                            <div style="display: flex; align-items: center;">
+                                ${thumb}
+                                <div>
+                                    <strong>${p.name}</strong><br>
+                                    <small style="color: #6b7280;">₱${p.price.toLocaleString()} | ${p.category || 'General'}</small>
+                                </div>
                             </div>
                             <button onclick="deleteProduct('${p.id}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">Delete</button>
                         </div>
@@ -296,15 +295,27 @@
 
         window.closeMyUploads = function() { document.getElementById('my-uploads-modal').style.display = 'none'; }
 
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+
         window.addProduct = async function() {
             let name = document.getElementById('prod-name').value;
             let price = parseFloat(document.getElementById('prod-price').value);
             let category = document.getElementById('prod-category').value;
-            let bg = document.getElementById('prod-bg').value;
+            let imageFile = document.getElementById('prod-image').files[0];
 
             if (!name || isNaN(price)) {
                 alert('Please enter valid product info.');
                 return;
+            }
+
+            let imageUrl = '';
+            if (imageFile) {
+                imageUrl = await toBase64(imageFile);
             }
 
             try {
@@ -312,13 +323,14 @@
                     name,
                     price,
                     category,
-                    bg,
+                    imageUrl,
                     vendor: window.currentUser.email,
                     createdAt: Date.now()
                 });
-                alert('Product published live!');
+                alert('Product published live with image!');
                 document.getElementById('prod-name').value = '';
                 document.getElementById('prod-price').value = '';
+                document.getElementById('prod-image').value = '';
                 closeDashboard();
                 loadMarketplaceProducts();
             } catch (error) {
@@ -361,9 +373,13 @@
                 return;
             }
             productsToDisplay.forEach((p) => {
+                let imgMarkup = p.imageUrl 
+                    ? `<img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 12px; margin-bottom: 15px;">`
+                    : `<div class="product-img watch-bg"></div>`;
+
                 grid.innerHTML += `
                     <div class="card">
-                        <div class="product-img ${p.bg || 'watch-bg'}"></div>
+                        ${imgMarkup}
                         <h3>${p.name}</h3>
                         <p class="price">₱${p.price.toLocaleString()}</p>
                         <p style="font-size: 0.75rem; color: #6366f1; font-weight: 600; margin-bottom: 2px;">${p.category || 'General'}</p>
