@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders & Account - MyStore</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="logo" onclick="window.location.href='index.html'" style="cursor:pointer;">MyStore</div>
+        <div class="menu">
+            <a href="index.html">Home & Shop</a>
+            <a href="buyer-dashboard.html" style="color: #6366f1; font-weight: bold;">My Orders</a>
+        </div>
+        <div class="nav-right">
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div style="max-width: 800px; margin: 40px auto; padding: 20px;">
+        <h2>My Account & Order History</h2>
+        
+        <!-- Account Settings Card -->
+        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;">
+            <h3>Account Information</h3>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Full Name</label>
+                <input type="text" id="account-name">
+            </div>
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="text" id="account-phone">
+            </div>
+            <div class="form-group">
+                <label>Default Delivery Address</label>
+                <input type="text" id="account-address">
+            </div>
+            <button class="checkout-btn" style="width: auto; padding: 10px 20px;" onclick="updateAccount()">Save Account Changes</button>
+        </div>
+
+        <!-- Orders Tracking Section -->
+        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h3>Track Your Orders</h3>
+            <div id="orders-list" style="margin-top: 15px;">
+                <p>Loading your orders...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./firebase-config.js";
+        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        let currentUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUserId = user.uid;
+            loadUserData(user.uid);
+            loadUserOrders(user.email);
+        });
+
+        async function loadUserData(uid) {
+            let snap = await getDoc(doc(db, "users", uid));
+            if (snap.exists()) {
+                let data = snap.data();
+                document.getElementById('account-name').value = data.fullName || '';
+                document.getElementById('account-phone').value = data.phone || '';
+                document.getElementById('account-address').value = data.address || '';
+            }
+        }
+
+        window.updateAccount = async function() {
+            let fullName = document.getElementById('account-name').value;
+            let phone = document.getElementById('account-phone').value;
+            let address = document.getElementById('account-address').value;
+
+            try {
+                await updateDoc(doc(db, "users", currentUserId), { fullName, phone, address });
+                alert("Account updated successfully!");
+            } catch (e) {
+                alert("Error updating account: " + e.message);
+            }
+        }
+
+        async function loadUserOrders(email) {
+            let list = document.getElementById('orders-list');
+            try {
+                let q = query(collection(db, "orders"), where("userEmail", "==", email));
+                let snapshot = await getDocs(q);
+                
+                if (snapshot.empty) {
+                    list.innerHTML = '<p style="color: #6b7280;">You have no past orders yet.</p>';
+                    return;
+                }
+
+                list.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    let order = docSnap.data();
+                    let dateStr = new Date(order.createdAt).toLocaleString();
+                    let itemsHtml = order.items.map(i => `<li>${i.name} (₱${i.price.toLocaleString()})</li>`).join('');
+
+                    list.innerHTML += `
+                        <div style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #4b5563; margin-bottom: 8px;">
+                                <span><strong>Date:</strong> ${dateStr}</span>
+                                <span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Paid via ${order.paymentMethod}</span>
+                            </div>
+                            <ul style="margin-left: 20px; margin-bottom: 8px; font-size: 0.95rem;">${itemsHtml}</ul>
+                            <p style="font-weight: bold;">Total: ₱${order.totalAmount.toLocaleString()}</p>
+                            <p style="font-size: 0.85rem; color: #6b7280; margin-top: 5px;">Ship to: ${order.address} (${order.phone})</p>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                list.innerHTML = '<p style="color: red;">Error loading orders.</p>';
+            }
+        }
+
+        window.logout = async function() {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
