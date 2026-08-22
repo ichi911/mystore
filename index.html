@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Business Store</title>
+    <title>MyStore - Multi-Vendor Marketplace</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,43 +12,78 @@
         <div class="menu">
             <a href="#home">Home</a>
             <a href="#shop">Shop</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
+            <a href="#" id="auth-nav-link" onclick="openAuthModal()">Sign In / Register</a>
+            <a href="#" id="dashboard-link" style="display:none;" onclick="openDashboard()">Vendor Dashboard</a>
         </div>
         <div class="nav-right">
+            <span id="user-welcome" style="margin-right: 10px; font-weight: 500; font-size: 0.9rem;"></span>
             <button class="cart-btn" onclick="toggleCart()">🛒 Cart (<span id="cart-count">0</span>)</button>
+            <button id="logout-btn" class="logout-btn" style="display:none;" onclick="logout()">Logout</button>
         </div>
     </nav>
+
     <header class="hero" id="home">
-        <h1>Featured Products</h1>
-        <p>Handpicked items crafted for your daily lifestyle.</p>
+        <h1>Multi-Vendor Marketplace</h1>
+        <p>Discover unique products crafted by independent creators worldwide.</p>
+        <div style="margin-top: 20px;">
+            <button class="add-btn" style="width: auto; padding: 12px 25px;" onclick="scrollToShop()">Browse Marketplace</button>
+        </div>
     </header>
+
     <main class="product-grid" id="shop">
-        <div class="card">
-            <div class="product-img watch-bg"></div>
-            <h3>Elegance Chrono Watch</h3>
-            <p class="price">₱5,499.00</p>
-            <button class="add-btn" onclick="addToCart('Elegance Chrono Watch', 5499)">Add to Cart</button>
-        </div>
-        <div class="card">
-            <div class="product-img headphone-bg"></div>
-            <h3>Sonic Flow Headphones</h3>
-            <p class="price">₱3,150.00</p>
-            <button class="add-btn" onclick="addToCart('Sonic Flow Headphones', 3150)">Add to Cart</button>
-        </div>
-        <div class="card">
-            <div class="product-img bag-bg"></div>
-            <h3>Urban Voyager Backpack</h3>
-            <p class="price">₱2,200.00</p>
-            <button class="add-btn" onclick="addToCart('Urban Voyager Backpack', 2200)">Add to Cart</button>
-        </div>
-        <div class="card">
-            <div class="product-img mug-bg"></div>
-            <h3>Minimalist Ceramic Mug</h3>
-            <p class="price">₱799.00</p>
-            <button class="add-btn" onclick="addToCart('Minimalist Ceramic Mug', 799)">Add to Cart</button>
-        </div>
+        <!-- Products injected dynamically via JavaScript -->
     </main>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="cart-modal">
+        <div class="cart-content">
+            <h2 id="auth-title">Sign In to MyStore</h2>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="auth-email" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="auth-password" placeholder="••••••••">
+            </div>
+            <button class="checkout-btn" onclick="handleAuth()">Continue</button>
+            <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+                <span id="auth-switch-text">Don't have an account?</span> 
+                <a href="#" onclick="toggleAuthMode()" style="color: #6366f1; font-weight: bold;">Register</a>
+            </p>
+            <button class="close-btn" style="margin-top: 15px;" onclick="closeAuthModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Vendor Dashboard Modal -->
+    <div id="dashboard-modal" class="cart-modal">
+        <div class="cart-content" style="max-width: 500px;">
+            <h2>Vendor Dashboard - Add Product</h2>
+            <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" id="prod-name" placeholder="e.g. Handmade Leather Wallet">
+            </div>
+            <div class="form-group">
+                <label>Price (₱)</label>
+                <input type="number" id="prod-price" placeholder="1500">
+            </div>
+            <div class="form-group">
+                <label>Category Style Gradient</label>
+                <select id="prod-bg">
+                    <option value="watch-bg">Blue Gradient</option>
+                    <option value="headphone-bg">Purple Gradient</option>
+                    <option value="bag-bg">Yellow Gradient</option>
+                    <option value="mug-bg">Green Gradient</option>
+                </select>
+            </div>
+            <button class="checkout-btn" onclick="addProduct()">Publish Product</button>
+            <h3 style="margin-top: 20px; font-size: 1.1rem;">Your Listed Products</h3>
+            <ul id="vendor-product-list" style="list-style: none; max-height: 120px; overflow-y: auto; margin-top: 10px; padding-left: 0;"></ul>
+            <button class="close-btn" style="margin-top: 15px;" onclick="closeDashboard()">Close Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
     <div id="cart-modal" class="cart-modal">
         <div class="cart-content">
             <h2>Your Shopping Cart</h2>
@@ -60,24 +95,195 @@
             <button class="close-btn" onclick="toggleCart()">Close</button>
         </div>
     </div>
+
     <section class="trust-bar">
         <div>🚚 Free Nationwide Delivery</div>
         <div>🔒 Secure Online Payments</div>
-        <div>⭐ Top Quality Guarantee</div>
+        <div>⭐ Independent Creator Verification</div>
     </section>
+
     <footer>
-        <p>&copy; 2026 MyStore. All rights reserved.</p>
+        <p>&copy; 2026 MyStore Marketplace. All rights reserved.</p>
         <div class="footer-links">
-            <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Contact Us</a>
+            <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Vendor Agreement</a>
         </div>
     </footer>
+
     <script>
+        // Initialize default sample products if none exist in localStorage
+        if (!localStorage.getItem('mystore_products')) {
+            const defaultProducts = [
+                { id: 1, name: 'Elegance Chrono Watch', price: 5499, bg: 'watch-bg', vendor: 'Admin' },
+                { id: 2, name: 'Sonic Flow Headphones', price: 3150, bg: 'headphone-bg', vendor: 'Admin' },
+                { id: 3, name: 'Urban Voyager Backpack', price: 2200, bg: 'bag-bg', vendor: 'Admin' },
+                { id: 4, name: 'Minimalist Ceramic Mug', price: 799, bg: 'mug-bg', vendor: 'Admin' }
+            ];
+            localStorage.setItem('mystore_products', JSON.stringify(defaultProducts));
+        }
+
+        if (!localStorage.getItem('mystore_users')) {
+            localStorage.setItem('mystore_users', JSON.stringify([]));
+        }
+
+        let currentUser = JSON.parse(localStorage.getItem('mystore_current_user')) || null;
         let cart = [];
+        let isRegisterMode = false;
+
+        window.onload = function() {
+            updateNavbar();
+            renderProducts();
+        };
+
+        function updateNavbar() {
+            if (currentUser) {
+                document.getElementById('auth-nav-link').style.display = 'none';
+                document.getElementById('dashboard-link').style.display = 'inline-block';
+                document.getElementById('user-welcome').innerText = 'Hi, ' + currentUser.email.split('@')[0];
+                document.getElementById('logout-btn').style.display = 'inline-block';
+            } else {
+                document.getElementById('auth-nav-link').style.display = 'inline-block';
+                document.getElementById('dashboard-link').style.display = 'none';
+                document.getElementById('user-welcome').innerText = '';
+                document.getElementById('logout-btn').style.display = 'none';
+            }
+        }
+
+        function openAuthModal() {
+            document.getElementById('auth-modal').style.display = 'flex';
+        }
+        function closeAuthModal() {
+            document.getElementById('auth-modal').style.display = 'none';
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('auth-title').innerText = isRegisterMode ? 'Create Vendor Account' : 'Sign In to MyStore';
+            document.getElementById('auth-switch-text').innerText = isRegisterMode ? 'Already have an account?' : "Don't have an account?";
+        }
+
+        function handleAuth() {
+            let email = document.getElementById('auth-email').value;
+            let pass = document.getElementById('auth-password').value;
+            if(!email || !pass) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('mystore_users'));
+
+            if(isRegisterMode) {
+                let existing = users.find(u => u.email === email);
+                if(existing) {
+                    alert('Email already registered!');
+                    return;
+                }
+                users.push({ email, pass });
+                localStorage.setItem('mystore_users', JSON.stringify(users));
+                alert('Account created successfully! You can now sign in.');
+                toggleAuthMode();
+            } else {
+                let user = users.find(u => u.email === email && u.pass === pass);
+                if(!user && email !== 'admin@store.com') {
+                    alert('Invalid email or password!');
+                    return;
+                }
+                currentUser = { email };
+                localStorage.setItem('mystore_current_user', JSON.stringify(currentUser));
+                closeAuthModal();
+                updateNavbar();
+                alert('Welcome back, ' + email + '!');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('mystore_current_user');
+            updateNavbar();
+            alert('Logged out successfully.');
+            renderProducts();
+        }
+
+        function openDashboard() {
+            document.getElementById('dashboard-modal').style.display = 'flex';
+            renderVendorProducts();
+        }
+        function closeDashboard() {
+            document.getElementById('dashboard-modal').style.display = 'none';
+        }
+
+        function addProduct() {
+            let name = document.getElementById('prod-name').value;
+            let price = parseFloat(document.getElementById('prod-price').value);
+            let bg = document.getElementById('prod-bg').value;
+
+            if(!name || isNaN(price)) {
+                alert('Please provide valid product details.');
+                return;
+            }
+
+            let products = JSON.parse(localStorage.getItem('mystore_products'));
+            let newProd = {
+                id: Date.now(),
+                name,
+                price,
+                bg,
+                vendor: currentUser.email
+            };
+
+            products.push(newProd);
+            localStorage.setItem('mystore_products', JSON.stringify(products));
+
+            document.getElementById('prod-name').value = '';
+            document.getElementById('prod-price').value = '';
+            
+            renderProducts();
+            renderVendorProducts();
+            alert('Product published successfully to the marketplace!');
+        }
+
+        function renderVendorProducts() {
+            let products = JSON.parse(localStorage.getItem('mystore_products'));
+            let list = document.getElementById('vendor-product-list');
+            let myProducts = products.filter(p => p.vendor === currentUser.email);
+
+            if(myProducts.length === 0) {
+                list.innerHTML = '<li style="color: #6b7280; font-size: 0.9rem;">No products uploaded yet.</li>';
+                return;
+            }
+
+            list.innerHTML = '';
+            myProducts.forEach(p => {
+                list.innerHTML += `<li style="padding: 6px 0; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between;">
+                    <span>${p.name}</span>
+                    <strong style="color: #6366f1;">₱${p.price.toLocaleString()}</strong>
+                </li>`;
+            });
+        }
+
+        function renderProducts() {
+            let products = JSON.parse(localStorage.getItem('mystore_products'));
+            let grid = document.getElementById('shop');
+            grid.innerHTML = '';
+
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <div class="product-img ${p.bg}"></div>
+                        <h3>${p.name}</h3>
+                        <p class="price">₱${p.price.toLocaleString()}</p>
+                        <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 10px;">By: ${p.vendor}</p>
+                        <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+                    </div>
+                `;
+            });
+        }
+
         function addToCart(name, price) {
             cart.push({ name, price });
             updateCartUI();
             alert(name + " has been added to your cart!");
         }
+
         function updateCartUI() {
             document.getElementById('cart-count').innerText = cart.length;
             let list = document.getElementById('cart-items');
@@ -89,15 +295,20 @@
             }
             list.innerHTML = '';
             let total = 0;
-            cart.forEach((item, index) => {
+            cart.forEach((item) => {
                 total += item.price;
                 list.innerHTML += `<li>${item.name} - ₱${item.price.toLocaleString()}</li>`;
             });
             totalElem.innerText = total.toLocaleString();
         }
+
         function toggleCart() {
             let modal = document.getElementById('cart-modal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function scrollToShop() {
+            document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
