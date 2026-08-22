@@ -8,12 +8,13 @@
 </head>
 <body>
     <nav>
-        <div class="logo">MyStore</div>
+        <div class="logo" onclick="window.scrollTo({top:0, behavior:'smooth'})" style="cursor:pointer;">MyStore</div>
         <div class="menu">
             <a href="#home">Home</a>
             <a href="#shop">Shop</a>
             <a href="#" id="auth-nav-link" onclick="openAuthModal()">Sign In / Register</a>
-            <a href="#" id="dashboard-link" style="display:none;" onclick="openDashboard()">Vendor Dashboard</a>
+            <a href="#" id="dashboard-link" style="display:none;" onclick="openDashboard()">Add Product</a>
+            <a href="#" id="my-uploads-link" style="display:none;" onclick="openMyUploads()">My Uploads</a>
         </div>
         <div class="nav-right">
             <span id="user-welcome" style="margin-right: 10px; font-weight: 500; font-size: 0.9rem;"></span>
@@ -29,6 +30,37 @@
             <button class="add-btn" style="width: auto; padding: 12px 25px;" onclick="scrollToShop()">Browse Products</button>
         </div>
     </header>
+
+    <!-- Category Filter Bar -->
+    <div class="filter-bar">
+        <label for="category-select" style="font-weight: 600; color: #4b5563;">Filter Category:</label>
+        <select id="category-select" onchange="filterByCategory()">
+            <option value="All categories">All categories</option>
+            <option value="Fashion & Clothing">Fashion & Clothing</option>
+            <option value="Shoes">Shoes</option>
+            <option value="Bags & Accessories">Bags & Accessories</option>
+            <option value="Beauty & Cosmetics">Beauty & Cosmetics</option>
+            <option value="Jewelry">Jewelry</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Software & Apps">Software & Apps</option>
+            <option value="Games">Games</option>
+            <option value="Books & eBooks">Books & eBooks</option>
+            <option value="Courses & Education">Courses & Education</option>
+            <option value="Art & Design">Art & Design</option>
+            <option value="Home & Living">Home & Living</option>
+            <option value="Furniture">Furniture</option>
+            <option value="Food & Drinks">Food & Drinks</option>
+            <option value="Pet Products">Pet Products</option>
+            <option value="Automotive">Automotive</option>
+            <option value="Health & Fitness">Health & Fitness</option>
+            <option value="Toys & Kids">Toys & Kids</option>
+            <option value="Gifts">Gifts</option>
+            <option value="Handmade & Crafts">Handmade & Crafts</option>
+            <option value="Tools & Hardware">Tools & Hardware</option>
+            <option value="Travel & Services">Travel & Services</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
 
     <main class="product-grid" id="shop">
         <!-- Live products injected here -->
@@ -55,17 +87,45 @@
         </div>
     </div>
 
-    <!-- Vendor Dashboard Modal -->
+    <!-- Vendor Dashboard Modal (Add Product) -->
     <div id="dashboard-modal" class="cart-modal">
         <div class="cart-content" style="max-width: 500px;">
-            <h2>Vendor Dashboard - Add Live Product</h2>
+            <h2>Add New Product</h2>
             <div class="form-group">
                 <label>Product Name</label>
-                <input type="text" id="prod-name" placeholder="e.g. Artisanal Coffee Beans">
+                <input type="text" id="prod-name" placeholder="e.g. Wireless Headphones">
             </div>
             <div class="form-group">
                 <label>Price (₱)</label>
-                <input type="number" id="prod-price" placeholder="450">
+                <input type="number" id="prod-price" placeholder="1250">
+            </div>
+            <div class="form-group">
+                <label>Select Category</label>
+                <select id="prod-category">
+                    <option value="Fashion & Clothing">Fashion & Clothing</option>
+                    <option value="Shoes">Shoes</option>
+                    <option value="Bags & Accessories">Bags & Accessories</option>
+                    <option value="Beauty & Cosmetics">Beauty & Cosmetics</option>
+                    <option value="Jewelry">Jewelry</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Software & Apps">Software & Apps</option>
+                    <option value="Games">Games</option>
+                    <option value="Books & eBooks">Books & eBooks</option>
+                    <option value="Courses & Education">Courses & Education</option>
+                    <option value="Art & Design">Art & Design</option>
+                    <option value="Home & Living">Home & Living</option>
+                    <option value="Furniture">Furniture</option>
+                    <option value="Food & Drinks">Food & Drinks</option>
+                    <option value="Pet Products">Pet Products</option>
+                    <option value="Automotive">Automotive</option>
+                    <option value="Health & Fitness">Health & Fitness</option>
+                    <option value="Toys & Kids">Toys & Kids</option>
+                    <option value="Gifts">Gifts</option>
+                    <option value="Handmade & Crafts">Handmade & Crafts</option>
+                    <option value="Tools & Hardware">Tools & Hardware</option>
+                    <option value="Travel & Services">Travel & Services</option>
+                    <option value="Other">Other</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Category Style Gradient</label>
@@ -77,7 +137,18 @@
                 </select>
             </div>
             <button class="checkout-btn" onclick="addProduct()">Publish Live Product</button>
-            <button class="close-btn" style="margin-top: 15px;" onclick="closeDashboard()">Close Dashboard</button>
+            <button class="close-btn" style="margin-top: 15px;" onclick="closeDashboard()">Close</button>
+        </div>
+    </div>
+
+    <!-- My Uploads Management Modal -->
+    <div id="my-uploads-modal" class="cart-modal">
+        <div class="cart-content" style="max-width: 600px;">
+            <h2>Manage Your Uploaded Items</h2>
+            <div id="my-uploads-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+                <p>Loading your items...</p>
+            </div>
+            <button class="close-btn" onclick="closeMyUploads()">Close</button>
         </div>
     </div>
 
@@ -107,23 +178,21 @@
         </div>
     </footer>
 
-    <!-- Firebase Integration Script -->
+    <!-- Firebase Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // IMPORTANT: Replace these values with your actual Firebase project settings from the Firebase Console
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAACHVvxBnKriHjYj4AYy_Ac9LXr_pRjJM",
-  authDomain: "mystore-marketplace-28fbe.firebaseapp.com",
-  projectId: "mystore-marketplace-28fbe",
-  storageBucket: "mystore-marketplace-28fbe.firebasestorage.app",
-  messagingSenderId: "850784198226",
-  appId: "1:850784198226:web:bd54f9cf89eccf2083898b",
-  measurementId: "G-Y5FTLCK2Q9"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyAACHVvxBnKriHjJ4AYy_Ac9LXr_pRjJM",
+            authDomain: "mystore-marketplace-28fbe.firebaseapp.com",
+            projectId: "mystore-marketplace-28fbe",
+            storageBucket: "mystore-marketplace-28fbe.firebasestorage.app",
+            messagingSenderId: "850784198226",
+            appId: "1:850784198226:web:bd54f9cf89eccf2083898b",
+            measurementId: "G-Y5FTLCK2Q9"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -131,6 +200,7 @@ const firebaseConfig = {
 
         let cart = [];
         let isRegisterMode = false;
+        let allProducts = [];
         window.currentUser = null;
 
         onAuthStateChanged(auth, (user) => {
@@ -142,11 +212,13 @@ const firebaseConfig = {
             if (window.currentUser) {
                 document.getElementById('auth-nav-link').style.display = 'none';
                 document.getElementById('dashboard-link').style.display = 'inline-block';
+                document.getElementById('my-uploads-link').style.display = 'inline-block';
                 document.getElementById('user-welcome').innerText = 'Hi, ' + window.currentUser.email.split('@')[0];
                 document.getElementById('logout-btn').style.display = 'inline-block';
             } else {
                 document.getElementById('auth-nav-link').style.display = 'inline-block';
                 document.getElementById('dashboard-link').style.display = 'none';
+                document.getElementById('my-uploads-link').style.display = 'none';
                 document.getElementById('user-welcome').innerText = '';
                 document.getElementById('logout-btn').style.display = 'none';
             }
@@ -186,9 +258,48 @@ const firebaseConfig = {
         window.openDashboard = function() { document.getElementById('dashboard-modal').style.display = 'flex'; }
         window.closeDashboard = function() { document.getElementById('dashboard-modal').style.display = 'none'; }
 
+        window.openMyUploads = async function() {
+            document.getElementById('my-uploads-modal').style.display = 'flex';
+            let listDiv = document.getElementById('my-uploads-list');
+            listDiv.innerHTML = '<p>Loading your items...</p>';
+            
+            if (!window.currentUser) {
+                listDiv.innerHTML = '<p>Please sign in first.</p>';
+                return;
+            }
+
+            try {
+                let userEmail = window.currentUser.email;
+                let userProducts = allProducts.filter(p => p.vendor === userEmail);
+                
+                if (userProducts.length === 0) {
+                    listDiv.innerHTML = '<p style="color:#6b7280;">You haven\'t uploaded any items yet.</p>';
+                    return;
+                }
+
+                listDiv.innerHTML = '';
+                userProducts.forEach(p => {
+                    listDiv.innerHTML += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
+                            <div>
+                                <strong>${p.name}</strong><br>
+                                <small style="color: #6b7280;">₱${p.price.toLocaleString()} | ${p.category || 'General'}</small>
+                            </div>
+                            <button onclick="deleteProduct('${p.id}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:600;">Delete</button>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                listDiv.innerHTML = '<p style="color:red;">Error loading your uploads.</p>';
+            }
+        }
+
+        window.closeMyUploads = function() { document.getElementById('my-uploads-modal').style.display = 'none'; }
+
         window.addProduct = async function() {
             let name = document.getElementById('prod-name').value;
             let price = parseFloat(document.getElementById('prod-price').value);
+            let category = document.getElementById('prod-category').value;
             let bg = document.getElementById('prod-bg').value;
 
             if (!name || isNaN(price)) {
@@ -200,11 +311,12 @@ const firebaseConfig = {
                 await addDoc(collection(db, "products"), {
                     name,
                     price,
+                    category,
                     bg,
                     vendor: window.currentUser.email,
                     createdAt: Date.now()
                 });
-                alert('Product published live to the database!');
+                alert('Product published live!');
                 document.getElementById('prod-name').value = '';
                 document.getElementById('prod-price').value = '';
                 closeDashboard();
@@ -214,30 +326,61 @@ const firebaseConfig = {
             }
         }
 
+        window.deleteProduct = async function(id) {
+            if (!confirm("Are you sure you want to delete this product?")) return;
+            try {
+                await deleteDoc(doc(db, "products", id));
+                alert("Product deleted successfully!");
+                closeMyUploads();
+                loadMarketplaceProducts();
+            } catch (error) {
+                alert("Error deleting product: " + error.message);
+            }
+        }
+
         async function loadMarketplaceProducts() {
             let grid = document.getElementById('shop');
             grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">Loading live products...</p>';
             try {
                 const querySnapshot = await getDocs(collection(db, "products"));
-                grid.innerHTML = '';
-                if (querySnapshot.empty) {
-                    grid.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:#6b7280;">No products found in database yet. Sign in and add one!</p>';
-                    return;
-                }
-                querySnapshot.forEach((doc) => {
-                    let p = doc.data();
-                    grid.innerHTML += `
-                        <div class="card">
-                            <div class="product-img ${p.bg}"></div>
-                            <h3>${p.name}</h3>
-                            <p class="price">₱${p.price.toLocaleString()}</p>
-                            <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 10px;">By: ${p.vendor}</p>
-                            <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
-                        </div>
-                    `;
+                allProducts = [];
+                querySnapshot.forEach((docSnap) => {
+                    allProducts.push({ id: docSnap.id, ...docSnap.data() });
                 });
+                renderProducts(allProducts);
             } catch (error) {
                 grid.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:#ef4444;">Error loading live products from Firebase.</p>';
+            }
+        }
+
+        window.renderProducts = function(productsToDisplay) {
+            let grid = document.getElementById('shop');
+            grid.innerHTML = '';
+            if (productsToDisplay.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; grid-column:1/-1; color:#6b7280;">No products found in this category.</p>';
+                return;
+            }
+            productsToDisplay.forEach((p) => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <div class="product-img ${p.bg || 'watch-bg'}"></div>
+                        <h3>${p.name}</h3>
+                        <p class="price">₱${p.price.toLocaleString()}</p>
+                        <p style="font-size: 0.75rem; color: #6366f1; font-weight: 600; margin-bottom: 2px;">${p.category || 'General'}</p>
+                        <p style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 10px;">By: ${p.vendor || 'Unknown'}</p>
+                        <button class="add-btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+                    </div>
+                `;
+            });
+        }
+
+        window.filterByCategory = function() {
+            let selectedCategory = document.getElementById('category-select').value;
+            if (selectedCategory === 'All categories') {
+                renderProducts(allProducts);
+            } else {
+                let filtered = allProducts.filter(p => p.category === selectedCategory);
+                renderProducts(filtered);
             }
         }
 
